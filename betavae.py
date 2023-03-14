@@ -41,8 +41,11 @@ class BVAE(nn.Module):
             nn.BatchNorm2d(3),
             nn.Sigmoid()
         )
-        
-        def init_weights(m):
+                    
+        self.init_weights()
+    
+    def init_weights(self):
+        def init_weights2(m):
             if isinstance(m, (nn.Linear, nn.Conv2d)):
                 torch.nn.init.kaiming_normal_(m.weight)
                 if m.bias is not None:
@@ -51,8 +54,7 @@ class BVAE(nn.Module):
                 m.weight.data.fill_(1)
                 if m.bias is not None:
                     m.bias.data.fill_(0)
-                    
-        self.apply(init_weights)
+        self.apply(init_weights2)
         
     def to_parameters(self, x):
         x = self.to_z(x)
