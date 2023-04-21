@@ -1,4 +1,4 @@
-#10708 : Probabilistic Graphical Models
+# 10708 : Probabilistic Graphical Models
 
 ## Course Project:  Supervising VAE Latent Representations with Language
 
