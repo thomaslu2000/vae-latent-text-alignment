@@ -12,7 +12,6 @@ def colormetricx(imager, color):
   r1 = color[0]
   g1 = color[1]
   b1 = color[2]
-  print( unique_colors.shape)
   r2 = unique_colors[0][0]
   g2 = unique_colors[0][1]
   b2 = unique_colors[0][2]
