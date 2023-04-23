@@ -16,6 +16,6 @@ def colormetricx(imager, color):
   g2 = unique_colors[0][1]
   b2 = unique_colors[0][2]
 
-  d=np.sqrt((np.absolute(r2-r1))^2+(np.absolute(g2-g1))^2+(np.absolute(b2-b1))^2)
-  p=d/np.sqrt((255)^2+(255)^2+(255)^2)
+  d=np.sqrt((np.absolute(r2-r1))**2+(np.absolute(g2-g1))**2+(np.absolute(b2-b1))**2)
+  p=d/np.sqrt((255)**2+(255)**2+(255)**2)
   return (1-p)*100
