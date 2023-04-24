@@ -38,17 +38,16 @@ device
 
 
 hyperparams = {
-    'non_given_dims': [5, 12, 20, 30, 50, 100],
-    'beta': [0.01, 0.5, 1.0, 2.0, 5.0],
-    'rgb_supervise': [True, False],
-    'rgb_weak_supervise_prop': [0.1, 0.25, 0.5],
-    'rgb_temp_beta': [0.99, 0.98,  0.9],
-    'rgb_lambda': [1, 5, 10],
-    'adversarial_supervise': [True, False],
-    'adversarial_lambda': [20, 30, 50],
-    'adversarial_target_language': [True, False],
-    'encoder_class': ['USEEncode', 'CLIPEncode', 'W2VEncode'],
-#     'run_idx': [1, 2, 3]
+    'non_given_dims': [5, 50],
+    'beta': [1.0],
+    'rgb_supervise': [True],
+    'rgb_weak_supervise_prop': [0.05, 0.1, 0.25, 0.4, 0.5], # 0.1, 0.25, 0.5
+    'rgb_temp_beta': [0.99, 0.98,  0.9], # 0.99, 0.98,  0.9
+    'rgb_lambda': [1, 5, 10, 20], # 1, 5, 10
+    'adversarial_supervise': [False],
+    'adversarial_lambda': [20, 30], # 20, 30, 50
+    'adversarial_target_language': [True],
+    'encoder_class': ['CLIPEncode'], # 'CLIPEncode', 'W2VEncode'
 }
 
 
@@ -444,42 +443,9 @@ for trial in trials:
                                 )
 
                     if avg_valid_loss < best_valid:
-    #                     torch.save(net, f'models/{beta}-featurevae-{z_dim}dim')
-                        curr_metrics = []
-                        curr_color_metrics = []
-                        for (x, latent_supervision, rgb, _) in valid_dataloader:
-                            if extra_reducer:
-                                latent_supervision = reducer(latent_supervision)
-
-                            supervision = latent_supervision
-
-                            if rgb_supervise:
-                                pred_rgb = rgb_maker(latent_supervision)
-                                avg_rgb_loss += mse_loss(pred_rgb, rgb).item() / num_valid_batches
-                                supervision = pred_rgb
-
-                            recon, mu, var, z = net(x, supervision)
-
-                            rand_color_idxs = np.random.randint(len(valid_color_rgb), size=x.shape[0])
-                            rand_colors = valid_color_rgb[rand_color_idxs].cpu().numpy()
-
-                            rand_color_features = valid_meta[rand_color_idxs].to(device)
-                            if extra_reducer:
-                                rand_color_features = reducer(rand_color_features)
-
-                            if rgb_supervise:
-                                rand_color_features = rgb_maker(rand_color_features)
-
-                            recon2 = net.generate(z, rand_color_features)
-                            curr_metrics.extend([
-                                metricx(pilable(r), pilable(xi))
-                                for r, xi in zip(recon, x)
-                            ])
-                            curr_color_metrics.extend([
-                                colormetricx(pilable(r), colorable(c))
-                                for r, c in zip(recon2, rand_colors)
-                            ])
-
+                        torch.save(net, f'models/{beta}-featurevae-{z_dim}dim')
+                        if rgb_supervise:
+                            torch.save(rgb_maker, f'models/rgb')
                         best_valid = avg_valid_loss
 
                     valid_losses.append(avg_valid_loss)
@@ -505,6 +471,45 @@ for trial in trials:
 #                 axi.imshow(imi)
 #         plt.show()
 
+    net = torch.load(f'models/{beta}-featurevae-{z_dim}dim')
+    
+    if rgb_supervise:
+        rgb_maker = torch.load(f'models/rgb')
+    with torch.no_grad():
+        curr_metrics = []
+        curr_color_metrics = []
+        for (x, latent_supervision, rgb, _) in valid_dataloader:
+            if extra_reducer:
+                latent_supervision = reducer(latent_supervision)
+
+            supervision = latent_supervision
+
+            if rgb_supervise:
+                pred_rgb = rgb_maker(latent_supervision)
+                avg_rgb_loss += mse_loss(pred_rgb, rgb).item() / num_valid_batches
+                supervision = pred_rgb
+
+            recon, mu, var, z = net(x, supervision)
+
+            rand_color_idxs = np.random.randint(len(valid_color_rgb), size=x.shape[0])
+            rand_colors = valid_color_rgb[rand_color_idxs].cpu().numpy()
+
+            rand_color_features = valid_meta[rand_color_idxs].to(device)
+            if extra_reducer:
+                rand_color_features = reducer(rand_color_features)
+
+            if rgb_supervise:
+                rand_color_features = rgb_maker(rand_color_features)
+
+            recon2 = net.generate(z, rand_color_features)
+            curr_metrics.extend([
+                metricx(pilable(r), pilable(xi))
+                for r, xi in zip(recon, x)
+            ])
+            curr_color_metrics.extend([
+                colormetricx(pilable(r), colorable(c))
+                for r, c in zip(recon2, rand_colors)
+            ])
 
     trial['img_metric_mean'] = np.mean(curr_metrics, axis=0)
     trial['img_metric_std'] = np.std(curr_metrics, axis=0)
@@ -517,7 +522,14 @@ for trial in trials:
 #         print(k, ':', v)
     
     all_trials.append(trial)
-    pd.DataFrame(all_trials).to_csv('all_trials.csv', index=False)
+try:
+    orig_all_trials = pd.read_csv('all_trials.csv')
+    pd_trials = pd.concat([orig_all_trials, pd.DataFrame(all_trials)], axis=0)
+except:
+    pd_trials = pd.DataFrame(all_trials)
+
+print(len(pd_trials))
+pd_trials.to_csv('all_trials.csv', index=False)
 
 
 
