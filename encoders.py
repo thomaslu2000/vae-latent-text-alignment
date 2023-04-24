@@ -1,25 +1,25 @@
 # !pip install open_clip_torch
 
 import open_clip
-import tensorflow as tf
-import tensorflow_hub as hub
+# import tensorflow as tf
+# import tensorflow_hub as hub
 import torch
 import gensim.downloader
 from tqdm import tqdm
 
-class USEEncode:
-    def __init__(self, model=None, prompt=None):
-        self.prefix, self.suffix = '', ''
-        if prompt:
-            self.prefix, self.suffix = prompt.split('{}')
-        if model is None:
-            model = "https://tfhub.dev/google/universal-sentence-encoder/4"
+# class USEEncode:
+#     def __init__(self, model=None, prompt=None):
+#         self.prefix, self.suffix = '', ''
+#         if prompt:
+#             self.prefix, self.suffix = prompt.split('{}')
+#         if model is None:
+#             model = "https://tfhub.dev/google/universal-sentence-encoder/4"
             
-        self.model = hub.load(model)
+#         self.model = hub.load(model)
     
-    def encode(self, df):
-        prompted = (self.prefix + df.color + self.suffix).values
-        return torch.FloatTensor(self.model(prompted).numpy())
+#     def encode(self, df):
+#         prompted = (self.prefix + df.color + self.suffix).values
+#         return torch.FloatTensor(self.model(prompted).numpy())
 
     
 class CLIPEncode:
