@@ -17,12 +17,14 @@ class SupervisedBVAE(BVAE):
         yhat = self.z_to_out_map(z)
         return img, mu, var, z, yhat
     
-    def forward_with_supervision(self, x, y):
+    def forward_with_supervision(self, x, y, smoothing=0):
         mu, var = super().to_parameters(x)
         
         z = mu
         yhat = self.z_to_out_map(z)
-        diff = F.linear((y-yhat), linalg.pinv(self.z_to_out_map.weight))
+        W = self.z_to_out_map.weight
+        smoothed_inv = torch.matmul(linalg.inv(torch.matmul(W.transpose(0, 1), W) + smoothing*torch.eye(n=len(W[0]))), W.transpose(0, 1))
+        diff = F.linear((y-yhat), smoothed_inv)
         z = z + diff # it will not necessarily be the case that Wz+bias = y
         
         
